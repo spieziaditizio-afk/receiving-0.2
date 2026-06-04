@@ -3,24 +3,133 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PackCalc — Smart Receiving Calculator | Arrow Electronics</title>
+  <title>PackCalc — Arrow Electronics</title>
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <style>
+    :root{
+      --bg:#07080b;--surface:#0c0e14;--s2:#111520;--s3:#181d29;
+      --border:#1a2030;--border-hi:#26304a;
+      --text:#eef0f7;--sec:#7a8aaa;--muted:#52607c;
+      --amber:#ffb700;--amber-glow:rgba(255,183,0,.15);
+      --green:#00e569;--red:#ff3838;--yellow:#f7c048;--blue:#4a9eff;
+    }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    html,body,#root{height:100%;}
-    body{background:#0d0f14;color:#e3e5ef;font-family:'Inter',system-ui,sans-serif;overflow:hidden;}
     input,button{font-family:inherit;}
-    ::-webkit-scrollbar{width:6px;}
-    ::-webkit-scrollbar-track{background:#141720;}
-    ::-webkit-scrollbar-thumb{background:#2c3047;border-radius:3px;}
-    @keyframes pulse-dot{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(35,197,94,.4);}50%{opacity:.6;box-shadow:0 0 0 6px rgba(35,197,94,0);}}
-    @keyframes flash-green{0%{background:rgba(35,197,94,.16);}100%{background:transparent;}}
-    @keyframes pop-in{from{opacity:0;transform:scale(.95);}to{opacity:1;transform:none;}}
-    @keyframes slide-in{from{opacity:0;transform:translateX(-8px);}to{opacity:1;transform:none;}}
+    ::-webkit-scrollbar{width:4px;}
+    ::-webkit-scrollbar-track{background:var(--surface);}
+    ::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:2px;}
+
+    @keyframes led-pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,229,105,.3);}50%{opacity:.7;box-shadow:0 0 0 5px rgba(0,229,105,0);}}
+    @keyframes led-pulse-blue{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(74,158,255,.3);}50%{opacity:.7;box-shadow:0 0 0 5px rgba(74,158,255,0);}}
+    @keyframes flash-green{0%{background:rgba(0,229,105,.1);}100%{background:transparent;}}
+    @keyframes tick-in{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+    @keyframes num-slam{0%{transform:scale(1.18);}100%{transform:scale(1);}}
+    @keyframes bracket-draw{from{opacity:0;transform:scale(.96);}to{opacity:1;transform:none;}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}}
+
+    /* Scan zone corners */
+    .scan-zone{position:relative;animation:bracket-draw .25s ease;}
+    .scan-zone::before,.scan-zone::after,.sz-bl,.sz-tr{content:'';position:absolute;width:14px;height:14px;pointer-events:none;}
+    .scan-zone::before{top:-2px;left:-2px;border-top:2px solid var(--amber);border-left:2px solid var(--amber);}
+    .scan-zone::after{top:-2px;right:-2px;border-top:2px solid var(--amber);border-right:2px solid var(--amber);}
+    .sz-bl{bottom:-2px;left:-2px;border-bottom:2px solid var(--amber);border-left:2px solid var(--amber);}
+    .sz-tr{bottom:-2px;right:-2px;border-bottom:2px solid var(--amber);border-right:2px solid var(--amber);}
+    .scan-zone.blue::before,.scan-zone.blue::after,.scan-zone.blue .sz-bl,.scan-zone.blue .sz-tr{border-color:var(--blue);}
+
+    /* Inputs */
+    .main-inp{width:100%;padding:16px 52px 16px 18px;background:var(--s2);border:2px solid var(--amber);border-radius:8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;outline:none;min-height:60px;}
+    .main-inp::placeholder{color:var(--muted);font-size:15px;font-weight:400;}
+    .main-inp:focus{box-shadow:0 0 0 3px var(--amber-glow);}
+    .main-inp.blue{border-color:var(--blue);}
+    .main-inp.blue:focus{box-shadow:0 0 0 3px rgba(74,158,255,.15);}
+    .field-inp{width:100%;padding:9px 12px;min-height:42px;background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;outline:none;}
+    .field-inp:focus{border-color:var(--amber);}
+
+    /* Counters */
+    .ctr{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 20px;text-align:center;min-width:90px;}
+    .ctr.amber{border-color:rgba(255,183,0,.3);background:rgba(255,183,0,.06);}
+    .ctr.green{border-color:rgba(0,229,105,.3);background:rgba(0,229,105,.06);}
+    .ctr-val{font-family:'Bebas Neue',sans-serif;font-size:50px;line-height:1;}
+    .ctr-val.amber{color:var(--amber);}
+    .ctr-val.green{color:var(--green);}
+    .ctr-lbl{font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--muted);margin-top:2px;font-family:'Barlow Condensed',sans-serif;}
+
+    /* Step chips */
+    .step-chip{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:80px;padding:8px 10px;border-radius:8px;border:1.5px solid;}
+
+    /* Buttons */
+    .new-btn{display:flex;align-items:center;gap:5px;padding:8px 14px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--sec);cursor:pointer;font-size:13px;font-weight:600;letter-spacing:.04em;min-height:38px;}
+    .new-btn:hover{border-color:var(--border-hi);color:var(--text);}
+    .new-btn:focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+
+    .tkt-btn{width:100%;padding:15px 0;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;letter-spacing:.08em;display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;}
+    .tkt-btn:enabled{background:var(--amber);color:var(--bg);}
+    .tkt-btn:disabled{background:var(--s3);color:var(--muted);cursor:not-allowed;}
+    .tkt-btn:focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+
+    .icon-btn{background:none;border:none;cursor:pointer;padding:8px;display:flex;border-radius:4px;min-width:36px;min-height:36px;align-items:center;justify-content:center;}
+    .icon-btn.edit:hover svg{stroke:var(--amber);}
+    .icon-btn.del:hover svg{stroke:var(--red);}
+    .icon-btn:focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+
+    .ftoggle{display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:7px;cursor:pointer;border:1.5px solid;font-size:13px;font-weight:700;letter-spacing:.04em;min-height:38px;}
+    .ftoggle:disabled{cursor:default;}
+    .ftoggle:focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+
+    .seg-toggle{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+    .seg-btn{padding:6px 14px;background:none;border:none;cursor:pointer;font-size:12px;font-weight:700;letter-spacing:.05em;color:var(--sec);min-height:36px;}
+    .seg-btn.active{background:var(--amber);color:var(--bg);}
+    .seg-btn.active.blue-active{background:var(--blue);color:#fff;}
+    .seg-btn:focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+
+    .layout-toggle{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:8px;}
+    .lt-btn{flex:1;padding:7px 0;background:none;border:none;cursor:pointer;font-size:12px;font-weight:700;letter-spacing:.05em;color:var(--sec);}
+    .lt-btn.active{background:var(--s3);color:var(--text);}
+    .lt-btn:focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+
+    .pick-btn{margin-left:auto;padding:7px 14px;border-radius:5px;border:1px solid var(--red);background:transparent;color:var(--red);cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.05em;min-height:38px;min-width:64px;flex-shrink:0;}
+    .pick-btn:hover{background:rgba(255,56,56,.1);}
+    .pick-btn:focus-visible{outline:2px solid var(--red);outline-offset:2px;}
+
+    .hist-item{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;width:100%;text-align:left;}
+    .hist-item:hover{border-color:var(--border-hi);}
+    .hist-item:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
+
+    .mixed-warn{display:flex;align-items:center;gap:6px;justify-content:center;font-size:13px;font-weight:600;color:var(--yellow);letter-spacing:.04em;}
+    .scan-err{color:var(--red);font-size:12px;text-align:center;margin-top:8px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;}
+    .box-row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--s2);border:1px solid var(--border);border-radius:8px;animation:tick-in .15s ease;min-height:48px;}
+
+    /* ── Desktop (≥640px) ── */
+    @media(min-width:640px){
+      html,body,#root{height:100%;overflow:hidden;}
+      body{background:var(--bg);color:var(--text);font-family:'Barlow Condensed',system-ui,sans-serif;}
+      .app-root{height:100%;display:flex;flex-direction:column;}
+      .app-body{flex:1;display:flex;overflow:hidden;}
+      .panel-scan{flex:1;display:flex!important;flex-direction:column;overflow:hidden;}
+      .panel-list{width:380px;flex-shrink:0;background:var(--surface);border-left:1px solid var(--border);display:flex!important;flex-direction:column;overflow:hidden;}
+      .tab-bar{display:none!important;}
+    }
+    /* ── Mobile / TC520L (<640px) ── */
+    @media(max-width:639px){
+      html,body,#root{height:100dvh;overflow:hidden;}
+      body{background:var(--bg);color:var(--text);font-family:'Barlow Condensed',system-ui,sans-serif;}
+      .app-root{height:100dvh;display:flex;flex-direction:column;}
+      .app-body{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+      .panel-scan{flex:1;display:flex;flex-direction:column;overflow-y:auto;}
+      .panel-list{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--surface);border-top:1px solid var(--border);}
+      .panel-scan.tab-hidden,.panel-list.tab-hidden{display:none!important;}
+      .tab-bar{display:flex;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;}
+      .tab-btn{flex:1;padding:14px 8px;background:none;border:none;color:var(--sec);font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.06em;cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;}
+      .tab-btn.active{color:var(--amber);border-bottom-color:var(--amber);}
+      .tab-btn.active.blue{color:var(--blue);border-bottom-color:var(--blue);}
+      .main-inp{font-size:19px;min-height:58px;}
+      .ctr-val{font-size:42px;}
+    }
   </style>
 </head>
 <body>
@@ -28,306 +137,703 @@
 <script type="text/babel">
 const { useState, useEffect, useRef } = React;
 
+/* ── Design tokens ── */
 const C = {
-  bg:'#0d0f14', surface:'#141720', s2:'#1b1f2c', s3:'#232839',
-  border:'#2c3047', text:'#e3e5ef', sec:'#8890a8', muted:'#565e7a',
-  orange:'#f47c1f', green:'#23c55e', greenDim:'#14532d',
-  red:'#ef4444', yellow:'#f59e0b', blue:'#3b82f6',
+  bg:'#07080b',surface:'#0c0e14',s2:'#111520',s3:'#181d29',
+  border:'#1a2030',borderHi:'#26304a',
+  text:'#eef0f7',sec:'#7a8aaa',muted:'#52607c',
+  amber:'#ffb700',amberGlow:'rgba(255,183,0,.15)',
+  green:'#00e569',red:'#ff3838',yellow:'#f7c048',blue:'#4a9eff',
 };
 const PATHS = {
-  check:'M20 6 9 17l-5-5', xmark:'M18 6 6 18M6 6l12 12', plus:'M12 5v14M5 12h14',
+  check:'M20 6 9 17l-5-5',
   trash:'M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6',
   print:'M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z',
-  reset:'M1 4v6h6M3.51 15a9 9 0 1 0 .49-4.34', scan:'M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10',
+  reset:'M1 4v6h6M3.51 15a9 9 0 1 0 .49-4.34',
+  scan:'M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10',
   box:'M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z',
   edit:'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z',
+  warn:'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01',
+  history:'M12 8v4l3 3M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0',
+  arrow:'M5 12h14M12 5l7 7-7 7',
 };
 const Svg = ({ name, size=16, color='currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     {(PATHS[name]||'').split(/(?=[ML])/).map((seg,i)=><path key={i} d={seg.trim()}/>)}
   </svg>
 );
-const inputSx = { width:'100%', padding:'9px 12px', borderRadius:7, background:C.s2, border:`1px solid ${C.border}`, color:C.text, fontSize:13, fontFamily:"'JetBrains Mono',monospace", outline:'none' };
-const labelSx = { display:'block', fontSize:9, fontWeight:700, color:C.muted, letterSpacing:'0.08em', marginBottom:4 };
-const uid = () => Math.random().toString(36).slice(2,9);
-const tsNow = () => new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-const dateStr = () => new Date().toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'});
 
-/* ═══════════════════════════════════════════
-   TICKET PRINT
-═══════════════════════════════════════════ */
-const printTicket = (meta, boxes) => {
-  const ts = dateStr();
-  const totalPcs = boxes.reduce((s,b)=>s+b.qty,0);
-  const boxRows = boxes.map((b,i)=>`<div class="box-row"><span class="bnum">Box ${String(i+1).padStart(2,'0')}</span>${b.pn?`<span class="bpn">${b.pn}</span>`:''}${b.coo?`<span class="bcoo">${b.coo}</span>`:''}<span class="bqty">${b.qty}</span><span class="bunit">pcs</span></div>`).join('');
-  const showCols = boxes.some(b=>b.pn)||boxes.some(b=>b.coo);
-  const w = window.open('','_blank','width=620,height=560,toolbar=0,menubar=0');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receiving Ticket${meta.pn?` — ${meta.pn}`:''}</title>
+/* ── Utilities ── */
+const uid       = () => Math.random().toString(36).slice(2,9);
+const genPltId  = () => 'P'+ Math.random().toString(36).slice(2,8).toUpperCase();
+const tsNow     = () => new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+const dateStr   = () => new Date().toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'});
+const mono = (text,sz=13,wt=700,color=C.text) =>
+  `<span style="font-family:'JetBrains Mono',monospace;font-size:${sz}px;font-weight:${wt};color:${color};">${text}</span>`;
+
+/* ── Pallet history ── */
+const HIST_KEY  = 'packcalc_pallets';
+const MAX_HIST  = 10;
+const loadPallets  = () => { try { return JSON.parse(localStorage.getItem(HIST_KEY)||'[]'); } catch { return []; } };
+const saveToHist   = (pallet) => {
+  let list = loadPallets().filter(p=>p.id!==pallet.id);
+  list.unshift(pallet);
+  if(list.length > MAX_HIST) list = list.slice(0, MAX_HIST);
+  try { localStorage.setItem(HIST_KEY, JSON.stringify(list)); } catch {}
+};
+
+/* ── QR encode / decode ── */
+const encodePallet = (pallet) => JSON.stringify({
+  v:1, id:pallet.id,
+  m:{ pn:pallet.meta.pn||'', coo:pallet.meta.coo||'', po:pallet.meta.po||'', ref:pallet.meta.ref||'' },
+  b: pallet.boxes.map(b=>({ i:b.id, pn:b.pn||'', coo:b.coo||'', q:b.qty })),
+});
+const decodePallet = (str) => {
+  const d = JSON.parse(str.trim());
+  if(d.v!==1) throw new Error('bad version');
+  return {
+    id:   d.id,
+    meta: { pn:d.m.pn||'', coo:d.m.coo||'', po:d.m.po||'', ref:d.m.ref||'' },
+    boxes: d.b.map(b=>({ id:b.i, pn:b.pn||'', coo:b.coo||'', qty:b.q, time:'' })),
+  };
+};
+const genQR = async (data) => {
+  try { return await QRCode.toDataURL(data, { width:96, margin:1, color:{ dark:'#111', light:'#fff' } }); }
+  catch { return null; }
+};
+
+/* ── Printers ── */
+const PRINTERS = {
+  zt:  { name:'Zebra ZT',     width:'12.8cm' },
+  qln: { name:'Zebra QLn420', width:'11.3cm' },
+};
+
+/* ── Shared label CSS (injected into popup) ── */
+const labelCSS = (labelW) => `
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#f0f0f0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:'Inter',sans-serif;gap:14px;padding:20px;}
+  .label{width:${labelW};background:#fff;border:1.5px solid #111;padding:9px 12px;display:flex;flex-direction:column;gap:5px;}
+  .hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #111;padding-bottom:5px;gap:6px;}
+  .hdr-left{flex:1;min-width:0;}
+  .brand{font-size:9px;font-weight:900;letter-spacing:.06em;white-space:nowrap;}
+  .pid{font-family:'JetBrains Mono',monospace;font-size:8.5px;font-weight:800;color:#555;letter-spacing:.04em;}
+  .tag{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:900;padding:2px 7px;border-radius:3px;background:#fffbe6;color:#92600a;border:1px solid #f0c040;white-space:nowrap;flex-shrink:0;}
+  .pn{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:900;color:#111;letter-spacing:.02em;}
+  .pn-mixed{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:#aaa;}
+  .meta{display:flex;flex-wrap:wrap;gap:12px;border-top:1px solid #ddd;padding-top:4px;}
+  .mf .lbl{font-size:7px;font-weight:700;letter-spacing:.1em;color:#888;}
+  .mf .val{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:800;color:#111;}
+  .totals{display:grid;grid-template-columns:1fr 1fr;gap:4px;border-top:1px solid #ddd;padding-top:4px;}
+  .tot-block{background:#f7f7f7;border-radius:3px;padding:3px 7px;}
+  .tot-lbl{font-size:7px;font-weight:700;letter-spacing:.1em;color:#888;}
+  .tot-val{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:900;color:#111;}
+  .ftr{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #ddd;padding-top:4px;}
+  .ft{font-size:7.5px;color:#999;}
+  .ok{padding:2px 7px;border-radius:3px;font-size:8px;font-weight:800;background:#14532d;color:#22c55e;white-space:nowrap;}
+  .btn{padding:9px 24px;border:none;border-radius:6px;background:#ffb700;color:#07080b;font-weight:800;font-size:13px;cursor:pointer;}
+  @media print{body{background:#fff;}button{display:none!important;}}
+`;
+
+/* ── PRINT: LISTA layout ── */
+const printList = async (pallet, printerId) => {
+  const pr = PRINTERS[printerId] || PRINTERS.zt;
+  const { meta, boxes } = pallet;
+  const totalPcs  = boxes.reduce((s,b)=>s+b.qty,0);
+  const showCols  = boxes.some(b=>b.pn)||boxes.some(b=>b.coo);
+  const qrUrl     = await genQR(encodePallet(pallet));
+  const boxRows   = boxes.map((b,i)=>`
+    <div style="display:flex;align-items:center;gap:6px;padding:2px 5px;border-bottom:1px solid #f0f0f0;">
+      <span style="font-size:7.5px;color:#888;font-weight:700;min-width:38px;">Box ${String(i+1).padStart(2,'0')}</span>
+      ${b.pn?`<span style="font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:800;color:#92600a;min-width:60px;">${b.pn}</span>`:''}
+      ${b.coo?`<span style="font-size:8px;color:#555;min-width:24px;">${b.coo}</span>`:''}
+      <span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:900;color:#111;margin-left:auto;">${b.qty}</span>
+      <span style="font-size:7.5px;color:#888;">pcs</span>
+    </div>`).join('');
+  const w = window.open('','_blank','width=620,height=580,toolbar=0,menubar=0');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Ticket${meta.pn?` — ${meta.pn}`:''}</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box;}
-    body{background:#f0f0f0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:'Inter',sans-serif;gap:14px;padding:20px;}
-    .label{width:12.8cm;background:#fff;border:1.5px solid #111;padding:9px 12px;display:flex;flex-direction:column;gap:6px;}
-    .hdr{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111;padding-bottom:5px;}
-    .brand{font-size:10px;font-weight:900;letter-spacing:.06em;}
-    .tag{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:900;padding:2px 8px;border-radius:3px;background:rgba(244,124,31,.12);color:#a8480a;border:1px solid rgba(244,124,31,.4);}
-    .pn{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:900;color:#111;letter-spacing:.02em;}
-    .meta{display:flex;gap:18px;border-top:1px solid #ddd;padding-top:5px;}
-    .mf .lbl{font-size:7px;font-weight:700;letter-spacing:.1em;color:#888;} .mf .val{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:800;color:#111;}
-    .boxes-sec{border-top:1px solid #ddd;padding-top:5px;}
-    .boxes-title{font-size:7.5px;font-weight:700;letter-spacing:.1em;color:#888;margin-bottom:4px;}
-    .box-row{display:flex;align-items:center;gap:8px;padding:2px 6px;border-bottom:1px solid #f0f0f0;}
-    .bnum{font-size:8px;color:#888;font-weight:700;min-width:42px;}
-    .bpn{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:800;color:#a8480a;min-width:70px;}
-    .bcoo{font-size:9px;color:#555;min-width:28px;}
-    .bqty{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:900;color:#111;margin-left:auto;} .bunit{font-size:8px;color:#888;}
+  <style>${labelCSS(pr.width)}
+    .boxes-sec{border-top:1px solid #ddd;padding-top:4px;}
+    .boxes-title{font-size:7px;font-weight:700;letter-spacing:.1em;color:#888;margin-bottom:3px;}
     .boxes-grid{display:grid;grid-template-columns:repeat(${showCols?2:4},1fr);gap:2px;}
-    .totals{display:grid;grid-template-columns:1fr 1fr;gap:4px;border-top:1px solid #ddd;padding-top:5px;}
-    .tot-block{background:#f7f7f7;border-radius:3px;padding:4px 8px;}
-    .tot-lbl{font-size:7px;font-weight:700;letter-spacing:.1em;color:#888;} .tot-val{font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:900;color:#111;}
-    .ftr{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #ddd;padding-top:5px;}
-    .ft{font-size:8px;color:#999;} .ok{padding:2px 8px;border-radius:3px;font-size:9px;font-weight:800;background:#14532d;color:#22c55e;}
-    .btn{padding:9px 24px;border:none;border-radius:6px;background:#f47c1f;color:#fff;font-weight:800;font-size:13px;cursor:pointer;}
-    @media print{body{background:#fff;}button{display:none!important;}}
   </style></head><body>
   <div class="label">
-    <div class="hdr"><div class="brand"><span style="color:#f47c1f;">ARROW</span> ELECTRONICS — MICROSOFT DEPT</div><div class="tag">RECEIVING</div></div>
-    ${meta.pn?`<div class="pn">${meta.pn}</div>`:'<div class="pn" style="color:#aaa;font-size:16px;">— mixed / no PN —</div>'}
+    <div class="hdr">
+      <div class="hdr-left">
+        <div class="brand">ARROW ELECTRONICS — MICROSOFT DEPT</div>
+        <div class="pid">${pallet.id}</div>
+      </div>
+      ${qrUrl?`<img src="${qrUrl}" width="46" height="46" style="image-rendering:pixelated;flex-shrink:0;"/>`:''}
+      <div class="tag">RECEIVING</div>
+    </div>
+    ${meta.pn?`<div class="pn">${meta.pn}</div>`:`<div class="pn-mixed">— mixed / no PN —</div>`}
     <div class="meta">
       ${meta.coo?`<div class="mf"><div class="lbl">COO</div><div class="val">${meta.coo}</div></div>`:''}
       ${meta.po?`<div class="mf"><div class="lbl">PO</div><div class="val">${meta.po}</div></div>`:''}
       ${meta.ref?`<div class="mf"><div class="lbl">REF</div><div class="val">${meta.ref}</div></div>`:''}
     </div>
-    <div class="boxes-sec"><div class="boxes-title">BOX BREAKDOWN — PIECES PER BOX</div><div class="boxes-grid">${boxRows}</div></div>
-    <div class="totals"><div class="tot-block"><div class="tot-lbl">TOTAL BOXES</div><div class="tot-val">${boxes.length}</div></div><div class="tot-block"><div class="tot-lbl">TOTAL PIECES</div><div class="tot-val">${totalPcs}</div></div></div>
-    <div class="ftr"><span class="ft">SEVENUM · ${ts}</span><span class="ok">✓ COUNTED</span></div>
+    <div class="boxes-sec">
+      <div class="boxes-title">BOX BREAKDOWN — PIECES PER BOX</div>
+      <div class="boxes-grid">${boxRows}</div>
+    </div>
+    <div class="totals">
+      <div class="tot-block"><div class="tot-lbl">TOTAL BOXES</div><div class="tot-val">${boxes.length}</div></div>
+      <div class="tot-block"><div class="tot-lbl">TOTAL PIECES</div><div class="tot-val">${totalPcs}</div></div>
+    </div>
+    <div class="ftr">
+      <span class="ft">SEVENUM · ${dateStr()} · ${pr.name}</span>
+      <span class="ok">✓ COUNTED</span>
+    </div>
   </div>
-  <button class="btn" onclick="window.print()">🖨 &nbsp;Print on Zebra ZT</button>
+  <button class="btn" onclick="window.print()">🖨 &nbsp;Print on ${pr.name}</button>
   </body></html>`);
   w.document.close();
 };
 
-/* ═══════════════════════════════════════════
-   APP
-═══════════════════════════════════════════ */
+/* ── PRINT: BURBUJAS layout ── */
+const printBubble = async (pallet, printerId) => {
+  const pr = PRINTERS[printerId] || PRINTERS.zt;
+  const { meta, boxes } = pallet;
+  const totalPcs = boxes.reduce((s,b)=>s+b.qty,0);
+  const qrUrl    = await genQR(encodePallet(pallet));
+  const bubbles  = boxes.map((b,i)=>`
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:40px;height:50px;border:1.5px solid #ffb700;border-radius:6px;background:#fffbe6;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:900;color:#111;line-height:1;">${b.qty}</div>
+      <div style="font-size:7px;font-weight:700;color:#888;letter-spacing:.04em;margin-top:2px;">B${String(i+1).padStart(2,'0')}</div>
+    </div>`).join('');
+  const w = window.open('','_blank','width=620,height=560,toolbar=0,menubar=0');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Ticket${meta.pn?` — ${meta.pn}`:''}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+  <style>${labelCSS(pr.width)}</style></head><body>
+  <div class="label">
+    <div class="hdr">
+      <div class="hdr-left">
+        <div class="brand">ARROW ELECTRONICS — MICROSOFT DEPT</div>
+        <div class="pid">${pallet.id}</div>
+      </div>
+      ${qrUrl?`<img src="${qrUrl}" width="46" height="46" style="image-rendering:pixelated;flex-shrink:0;"/>`:''}
+      <div class="tag">RECEIVING</div>
+    </div>
+    ${meta.pn?`<div class="pn">${meta.pn}</div>`:`<div class="pn-mixed">— mixed / no PN —</div>`}
+    <div class="meta">
+      ${meta.coo?`<div class="mf"><div class="lbl">COO</div><div class="val">${meta.coo}</div></div>`:''}
+      ${meta.po?`<div class="mf"><div class="lbl">PO</div><div class="val">${meta.po}</div></div>`:''}
+      ${meta.ref?`<div class="mf"><div class="lbl">REF</div><div class="val">${meta.ref}</div></div>`:''}
+    </div>
+    <div style="border-top:1px solid #ddd;padding-top:5px;">
+      <div style="font-size:7px;font-weight:700;letter-spacing:.1em;color:#888;margin-bottom:5px;">PIECES PER BOX</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;">${bubbles}</div>
+    </div>
+    <div class="totals">
+      <div class="tot-block"><div class="tot-lbl">TOTAL BOXES</div><div class="tot-val">${boxes.length}</div></div>
+      <div class="tot-block"><div class="tot-lbl">TOTAL PIECES</div><div class="tot-val">${totalPcs}</div></div>
+    </div>
+    <div class="ftr">
+      <span class="ft">SEVENUM · ${dateStr()} · ${pr.name}</span>
+      <span class="ok">✓ COUNTED</span>
+    </div>
+  </div>
+  <button class="btn" onclick="window.print()">🖨 &nbsp;Print on ${pr.name}</button>
+  </body></html>`);
+  w.document.close();
+};
+
+const doPrint = (pallet, printerId, layout) =>
+  layout === 'bubble' ? printBubble(pallet, printerId) : printList(pallet, printerId);
+
+/* ── Fields ── */
 const FIELDS = [
-  { key:'pn',  label:'PART NUMBER', short:'PN',  optional:true },
-  { key:'coo', label:'COUNTRY OF ORIGIN', short:'COO', optional:true },
-  { key:'qty', label:'PIECE QTY', short:'QTY', optional:false },
+  { key:'pn',  label:'PART NUMBER',       short:'PN',  optional:true  },
+  { key:'coo', label:'COUNTRY OF ORIGIN', short:'COO', optional:true  },
+  { key:'qty', label:'PIECE QTY',         short:'QTY', optional:false },
 ];
 
+/* ════════════════════════════════════════════
+   APP
+════════════════════════════════════════════ */
 const App = () => {
-  const [cfg,setCfg] = useState({ pn:true, coo:true });   // which optional fields to capture
-  const [meta,setMeta] = useState({ pn:'', coo:'', po:'', ref:'' });
-  const [boxes,setBoxes] = useState([]);
-  const [draft,setDraft] = useState({});
-  const [stepIndex,setStepIndex] = useState(0);
-  const [input,setInput] = useState('');
-  const [editingId,setEditingId] = useState(null);
-  const [flashKey,setFlashKey] = useState(0);
-  const [flash,setFlash] = useState(false);
-  const inputRef = useRef();
+  /* ── Mode ── */
+  const [mode,       setMode]       = useState('receive'); // 'receive' | 'floor'
 
-  // persist
-  useEffect(()=>{try{const s=JSON.parse(localStorage.getItem('packcalc')||'null');if(s){setCfg(s.cfg||{pn:true,coo:true});setMeta(s.meta||{pn:'',coo:'',po:'',ref:''});setBoxes(s.boxes||[]);}}catch(_){}; },[]);
-  useEffect(()=>{try{localStorage.setItem('packcalc',JSON.stringify({cfg,meta,boxes}));}catch(_){}; },[cfg,meta,boxes]);
+  /* ── Receive state ── */
+  const [cfg,        setCfg]        = useState({ pn:true, coo:true, printer:'zt', layout:'list' });
+  const [meta,       setMeta]       = useState({ pn:'', coo:'', po:'', ref:'' });
+  const [boxes,      setBoxes]      = useState([]);
+  const [palletId,   setPalletId]   = useState(genPltId);
+  const [draft,      setDraft]      = useState({});
+  const [stepIdx,    setStepIdx]    = useState(0);
+  const [input,      setInput]      = useState('');
+  const [editId,     setEditId]     = useState(null);
+  const [flash,      setFlash]      = useState(false);
+  const [flashKey,   setFlashKey]   = useState(0);
+  const [rcvTab,     setRcvTab]     = useState('scan'); // mobile tabs receive mode
 
-  const steps = FIELDS.filter(f=>!f.optional||cfg[f.key]);
-  const currentField = steps[stepIndex];
-  const isQty = currentField?.key==='qty';
+  /* ── Floor state ── */
+  const [floorInput,  setFloorInput]  = useState('');
+  const [floorPallet, setFloorPallet] = useState(null);
+  const [floorErr,    setFloorErr]    = useState('');
+  const [floorTab,    setFloorTab]    = useState('scan'); // mobile tabs floor mode
+  const [history,     setHistory]     = useState([]);
 
-  useEffect(()=>{ inputRef.current?.focus(); },[stepIndex,editingId]);
-  const doFlash = ()=>{ setFlash(true); setFlashKey(k=>k+1); setTimeout(()=>setFlash(false),700); };
-  const resetDraft = ()=>{ setDraft({}); setStepIndex(0); setInput(''); setTimeout(()=>inputRef.current?.focus(),40); };
+  const inputRef      = useRef();
+  const floorInputRef = useRef();
+
+  /* ── Persistence ── */
+  useEffect(()=>{
+    try {
+      const s = JSON.parse(localStorage.getItem('packcalc')||'null');
+      if(s){
+        setCfg(p=>({...p,...(s.cfg||{})}));
+        setMeta(s.meta||{pn:'',coo:'',po:'',ref:''});
+        setBoxes(s.boxes||[]);
+        if(s.palletId) setPalletId(s.palletId);
+      }
+    } catch {}
+    setHistory(loadPallets());
+  },[]);
+  useEffect(()=>{
+    try { localStorage.setItem('packcalc', JSON.stringify({cfg,meta,boxes,palletId})); } catch {}
+  },[cfg,meta,boxes,palletId]);
+
+  /* ── Derived (receive) ── */
+  const steps        = FIELDS.filter(f=>!f.optional||cfg[f.key]);
+  const currentField = steps[stepIdx];
+  const isQty        = currentField?.key==='qty';
+  const totalPcs     = boxes.reduce((s,b)=>s+b.qty,0);
+  const distinctPn   = [...new Set(boxes.filter(b=>b.pn).map(b=>b.pn))];
+  const distinctCoo  = [...new Set(boxes.filter(b=>b.coo).map(b=>b.coo))];
+  const isMixed      = distinctPn.length>1 || distinctCoo.length>1;
+
+  /* ── Focus ── */
+  useEffect(()=>{ if(mode==='receive') inputRef.current?.focus(); },[stepIdx,editId,mode]);
+  useEffect(()=>{ if(mode==='floor' && !floorPallet) floorInputRef.current?.focus(); },[mode,floorPallet]);
+
+  /* ── Receive handlers ── */
+  const doFlash    = ()=>{ setFlash(true); setFlashKey(k=>k+1); setTimeout(()=>setFlash(false),700); };
+  const resetDraft = ()=>{ setDraft({}); setStepIdx(0); setInput(''); setTimeout(()=>inputRef.current?.focus(),40); };
 
   const commit = (nd) => {
-    const box = { id:uid(), pn:nd.pn?nd.pn.toUpperCase():(cfg.pn?'':''), coo:nd.coo?nd.coo.toUpperCase():'', qty:nd.qty, time:tsNow() };
-    setBoxes(p=>[...p, box]);
+    setBoxes(p=>[...p,{id:uid(),pn:nd.pn?nd.pn.toUpperCase():'',coo:nd.coo?nd.coo.toUpperCase():'',qty:nd.qty,time:tsNow()}]);
     doFlash();
     resetDraft();
   };
-
   const handleEnter = () => {
     const f = currentField;
     let val = input.trim();
     if(f.key==='qty'){ const q=parseInt(val); if(!q||q<1) return; val=q; }
-    else { val = val.toUpperCase(); } // optional fields may be blank
+    else val = val.toUpperCase();
     const nd = {...draft,[f.key]:val};
     setInput('');
-    if(stepIndex<steps.length-1){ setDraft(nd); setStepIndex(stepIndex+1); }
+    if(stepIdx<steps.length-1){ setDraft(nd); setStepIdx(stepIdx+1); }
     else commit(nd);
   };
   const skipField = () => {
     const nd = {...draft,[currentField.key]:''};
     setInput('');
-    if(stepIndex<steps.length-1){ setDraft(nd); setStepIndex(stepIndex+1); }
+    if(stepIdx<steps.length-1){ setDraft(nd); setStepIdx(stepIdx+1); }
     else commit(nd);
   };
+  const delBox  = (id) => setBoxes(p=>p.filter(b=>b.id!==id));
+  const editBox = (id,patch) => setBoxes(p=>p.map(b=>b.id===id?{...b,...patch}:b));
+  const clearAll = () => {
+    if(!confirm('Clear all boxes and start a new pallet?')) return;
+    setBoxes([]); setMeta({pn:'',coo:'',po:'',ref:''}); setPalletId(genPltId()); resetDraft();
+  };
+  const handlePrint = async () => {
+    const pallet = {
+      id: palletId,
+      receivedAt: dateStr(),
+      meta:{ pn:meta.pn||(distinctPn.length===1?distinctPn[0]:''), coo:meta.coo||(distinctCoo.length===1?distinctCoo[0]:''), po:meta.po, ref:meta.ref },
+      boxes,
+    };
+    saveToHist(pallet);
+    setHistory(loadPallets());
+    await doPrint(pallet, cfg.printer, cfg.layout);
+  };
 
-  const delBox = (id)=>setBoxes(p=>p.filter(b=>b.id!==id));
-  const editBox = (id,patch)=>setBoxes(p=>p.map(b=>b.id===id?{...b,...patch}:b));
+  /* ── Floor handlers ── */
+  const handleFloorScan = () => {
+    try {
+      const pallet = decodePallet(floorInput);
+      setFloorPallet(pallet);
+      setFloorInput('');
+      setFloorErr('');
+      setFloorTab('boxes');
+    } catch {
+      setFloorErr('QR inválido — escanea la etiqueta del pallet');
+    }
+  };
+  const pickBox = (boxId) => {
+    if(!confirm('¿Retirar esta caja del pallet?')) return;
+    setFloorPallet(p=>p?{...p,boxes:p.boxes.filter(b=>b.id!==boxId)}:null);
+  };
+  const floorReprint = async () => {
+    if(!floorPallet) return;
+    const updated = {...floorPallet, receivedAt:dateStr()};
+    saveToHist(updated);
+    setHistory(loadPallets());
+    await doPrint(updated, cfg.printer, cfg.layout);
+  };
+  const loadFromHistory = (pallet) => { setFloorPallet(pallet); setFloorErr(''); setFloorTab('boxes'); };
 
-  const totalPcs = boxes.reduce((s,b)=>s+b.qty,0);
-  const avgPcs   = boxes.length?Math.round(totalPcs/boxes.length):0;
-  const distinctPn = [...new Set(boxes.filter(b=>b.pn).map(b=>b.pn))];
-  const distinctCoo = [...new Set(boxes.filter(b=>b.coo).map(b=>b.coo))];
+  /* ── Shared label ── */
+  const fldLbl = (text) => (
+    <span style={{display:'block',fontSize:9,fontWeight:700,color:C.muted,letterSpacing:'.08em',marginBottom:3,fontFamily:"'Barlow Condensed',sans-serif"}}>{text}</span>
+  );
+  const prInfo = PRINTERS[cfg.printer] || PRINTERS.zt;
 
-  const clearAll = ()=>{ if(confirm('Clear all boxes and start a new pallet?')){ setBoxes([]); setMeta({pn:'',coo:'',po:'',ref:''}); resetDraft(); } };
+  /* ════════════════════════════════
+     RECEIVE PANELS
+  ════════════════════════════════ */
+  const scanPanel = (
+    <div className={`panel-scan${rcvTab!=='scan'?' tab-hidden':''}`}
+         key={`fl-${flashKey}`}
+         style={{background:flash?'rgba(0,229,105,.06)':'transparent',transition:'background .6s'}}>
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'20px',overflowY:'auto'}}>
+        <div style={{width:'100%',maxWidth:500}}>
 
-  return (
-    <div style={{height:'100%',display:'flex',flexDirection:'column'}}>
-      <style>{`input:focus{outline:2px solid ${C.orange}!important;outline-offset:0;}button:hover{opacity:.92;}`}</style>
-
-      {/* HEADER */}
-      <header style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 20px',height:52,background:C.surface,borderBottom:`1px solid ${C.border}`,flexShrink:0}}>
-        <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <div style={{width:30,height:30,borderRadius:6,background:C.orange,display:'flex',alignItems:'center',justifyContent:'center'}}><svg width="16" height="16" viewBox="0 0 16 16" fill="white"><polygon points="1,8 8,1 15,8 8,8"/><polygon points="8,8 15,8 8,15" opacity=".6"/></svg></div>
-          <div>
-            <div style={{fontSize:13,fontWeight:800,color:C.text,letterSpacing:'0.01em',lineHeight:1.15}}>PackCalc <span style={{color:C.muted,fontWeight:600}}>— Smart Receiving Calculator</span></div>
-            <div style={{fontSize:9,color:C.muted,letterSpacing:'0.06em'}}>ARROW ELECTRONICS · MICROSOFT · SEVENUM</div>
+          {/* Config row */}
+          <div style={{display:'flex',gap:8,flexWrap:'wrap',justifyContent:'center',alignItems:'center',marginBottom:20}}>
+            <span style={{fontSize:11,color:C.muted,fontWeight:600,letterSpacing:'.05em',fontFamily:"'Barlow Condensed',sans-serif"}}>SCAN:</span>
+            {FIELDS.map(f=>{
+              const on=f.optional?cfg[f.key]:true;
+              return(
+                <button key={f.key} className="ftoggle"
+                  onClick={()=>f.optional&&setCfg(c=>({...c,[f.key]:!c[f.key]}))} disabled={!f.optional}
+                  style={{borderColor:on?C.green:C.border,background:on?'rgba(0,229,105,.08)':'transparent',color:on?C.green:C.sec,opacity:f.optional?1:.7}}>
+                  <span style={{width:13,height:13,borderRadius:3,border:`1.5px solid ${on?C.green:C.muted}`,background:on?C.green:'transparent',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                    {on&&<Svg name="check" size={9} color={C.bg}/>}
+                  </span>
+                  {f.label}{!f.optional&&<span style={{fontSize:8,color:C.muted,fontWeight:600}}>req</span>}
+                </button>
+              );
+            })}
+            <div className="seg-toggle">
+              {Object.entries(PRINTERS).map(([id])=>(
+                <button key={id} className={`seg-btn${cfg.printer===id?' active':''}`} onClick={()=>setCfg(c=>({...c,printer:id}))}>
+                  {id==='zt'?'ZT':'QLn'}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {/* Step chips */}
+          <div style={{display:'flex',gap:6,justifyContent:'center',marginBottom:16,flexWrap:'wrap'}}>
+            {steps.map((f,i)=>{
+              const captured=draft[f.key]!==undefined,active=i===stepIdx;
+              return(
+                <div key={f.key} className="step-chip" style={{background:active?C.s3:C.surface,borderColor:active?C.amber:captured?C.green:C.border}}>
+                  <span style={{fontSize:8,fontWeight:700,letterSpacing:'.08em',fontFamily:"'Barlow Condensed',sans-serif",color:active?C.amber:captured?C.green:C.muted}}>{f.short}</span>
+                  <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:13,fontWeight:800,color:captured?C.text:C.muted}}>
+                    {captured?(draft[f.key]||'—'):(active?'…':'—')}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Prompt */}
+          <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:'.07em',marginBottom:8,display:'flex',alignItems:'center',gap:6,justifyContent:'center',fontFamily:"'Barlow Condensed',sans-serif"}}>
+            <span style={{width:7,height:7,borderRadius:'50%',background:C.green,animation:'led-pulse 2s infinite',flexShrink:0,display:'inline-block'}}/>
+            {isQty?'TYPE OR SCAN':'SCAN'} {currentField?.label}{currentField?.optional?' (optional)':''}
+          </div>
+
+          {/* Scan zone */}
+          <div className="scan-zone">
+            <div className="sz-bl"/><div className="sz-tr"/>
+            <input ref={inputRef} value={input}
+              onChange={e=>setInput(isQty?e.target.value.replace(/\D/g,''):e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&handleEnter()}
+              inputMode={isQty?'numeric':undefined} type={isQty?'number':'text'} min={isQty?'1':undefined}
+              placeholder={isQty?'Pieces in this box…':`Scan ${currentField?.short||''} barcode…`}
+              className="main-inp" autoFocus/>
+            <div style={{position:'absolute',right:16,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}}>
+              <Svg name="scan" size={20} color={C.amber}/>
+            </div>
+          </div>
+          <div style={{fontSize:11,color:C.muted,marginTop:7,textAlign:'center',fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:'.03em'}}>
+            Step {stepIdx+1} of {steps.length} · Enter to confirm
+            {currentField?.optional&&<button onClick={skipField} style={{marginLeft:10,background:'none',border:'none',color:C.blue,cursor:'pointer',fontSize:11,fontWeight:600,textDecoration:'underline'}}>skip {currentField.short}</button>}
+            {stepIdx>0&&<button onClick={resetDraft} style={{marginLeft:10,background:'none',border:'none',color:C.muted,cursor:'pointer',fontSize:11,textDecoration:'underline'}}>reset box</button>}
+          </div>
+
+          {/* Counters */}
+          <div style={{display:'flex',gap:10,justifyContent:'center',marginTop:24,flexWrap:'wrap'}}>
+            <div className="ctr amber"><div className="ctr-val amber" style={{animation:flash?'num-slam .2s ease':undefined}}>{boxes.length}</div><div className="ctr-lbl">BOXES</div></div>
+            <div className="ctr green"><div className="ctr-val green" style={{animation:flash?'num-slam .2s ease':undefined}}>{totalPcs}</div><div className="ctr-lbl">TOTAL PCS</div></div>
+          </div>
+          {isMixed&&(
+            <div className="mixed-warn" style={{marginTop:14}} role="alert">
+              <Svg name="warn" size={13} color="currentColor"/>
+              Mixed pallet —{distinctPn.length>1?` ${distinctPn.length} part numbers`:''}{distinctPn.length>1&&distinctCoo.length>1?' · ':''}{distinctCoo.length>1?` ${distinctCoo.length} COOs`:''}
+            </div>
+          )}
         </div>
-        <button onClick={clearAll} style={{display:'flex',alignItems:'center',gap:5,padding:'6px 12px',borderRadius:6,border:`1px solid ${C.border}`,background:'transparent',color:C.sec,cursor:'pointer',fontSize:12,fontWeight:600}}><Svg name="reset" size={12} color={C.sec}/>New Pallet</button>
-      </header>
+      </div>
+    </div>
+  );
 
-      <div style={{flex:1,display:'flex',overflow:'hidden'}}>
+  const listPanel = (
+    <div className={`panel-list${rcvTab!=='boxes'?' tab-hidden':''}`}>
+      <div style={{padding:'14px 16px',borderBottom:`1px solid ${C.border}`,flexShrink:0}}>
+        <div style={{fontSize:9,fontWeight:700,color:C.muted,letterSpacing:'.08em',marginBottom:10,fontFamily:"'Barlow Condensed',sans-serif"}}>
+          PALLET <span style={{fontFamily:"'JetBrains Mono',monospace",fontWeight:800,color:C.amber,letterSpacing:'.04em'}}>{palletId}</span>
+          <span style={{fontWeight:400,letterSpacing:0}}> — ticket info (optional)</span>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+          {[{key:'pn',label:'PART NUMBER',ph:distinctPn.length===1?distinctPn[0]:'auto/mixed'},{key:'coo',label:'COO',ph:distinctCoo.length===1?distinctCoo[0]:'auto/mixed'},{key:'po',label:'PO',ph:'VT9A0000…'},{key:'ref',label:'REF/DELIVERY',ph:'optional'}].map(({key,label,ph})=>(
+            <div key={key}>{fldLbl(label)}<input value={meta[key]} onChange={e=>setMeta(m=>({...m,[key]:e.target.value.toUpperCase()}))} placeholder={ph} className="field-inp"/></div>
+          ))}
+        </div>
+      </div>
 
-        {/* LEFT — scanner + config */}
-        <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',animation:flash?'flash-green .6s ease forwards':'none'}} key={`fl-${flashKey}`}>
-          <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'24px 32px',overflowY:'auto'}}>
-            <div style={{width:'100%',maxWidth:480}}>
-
-              {/* capture config */}
-              <div style={{display:'flex',gap:8,justifyContent:'center',marginBottom:22}}>
-                <span style={{fontSize:11,color:C.muted,alignSelf:'center',marginRight:4}}>Scan per box:</span>
-                {FIELDS.map(f=>{
-                  const on = f.optional ? cfg[f.key] : true;
-                  return (
-                    <button key={f.key} onClick={()=>f.optional&&setCfg(c=>({...c,[f.key]:!c[f.key]}))} disabled={!f.optional} style={{
-                      display:'flex',alignItems:'center',gap:6,padding:'6px 12px',borderRadius:7,cursor:f.optional?'pointer':'default',
-                      border:`1.5px solid ${on?C.green:C.border}`,background:on?'rgba(35,197,94,.1)':C.s2,color:on?C.green:C.sec,fontSize:12,fontWeight:700,opacity:f.optional?1:.85}}>
-                      <span style={{width:14,height:14,borderRadius:4,border:`1.5px solid ${on?C.green:C.muted}`,background:on?C.green:'transparent',display:'flex',alignItems:'center',justifyContent:'center'}}>{on&&<Svg name="check" size={10} color="#0d0f14"/>}</span>
-                      {f.label}{!f.optional&&<span style={{fontSize:8,color:C.muted,fontWeight:600}}>req</span>}
-                    </button>
-                  );
-                })}
+      <div style={{flex:1,overflowY:'auto',padding:'12px 16px'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+          <div style={{fontSize:9,fontWeight:700,color:C.muted,letterSpacing:'.08em',fontFamily:"'Barlow Condensed',sans-serif"}}>BOXES ON PALLET</div>
+          <div style={{fontSize:11,color:C.sec,fontFamily:"'Barlow Condensed',sans-serif"}}>{boxes.length} box{boxes.length!==1?'es':''} · {totalPcs} pcs</div>
+        </div>
+        {boxes.length===0?(
+          <div style={{textAlign:'center',padding:'40px 0',color:C.muted}}>
+            <Svg name="box" size={32} color={C.border}/>
+            <div style={{marginTop:12,fontSize:13,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:'.05em'}}>No boxes yet</div>
+            <div style={{fontSize:11,marginTop:4}}>Scan the first box to begin</div>
+          </div>
+        ):(
+          <div style={{display:'flex',flexDirection:'column',gap:6}}>
+            {boxes.map((b,i)=>(
+              <div key={b.id} className="box-row">
+                <span style={{fontSize:11,color:C.muted,fontWeight:700,minWidth:44,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:'.04em',flexShrink:0}}>Box {String(i+1).padStart(2,'0')}</span>
+                {editId===b.id?(
+                  <>
+                    <input defaultValue={b.qty} autoFocus
+                      onKeyDown={e=>{if(e.key==='Enter'){editBox(b.id,{qty:parseInt(e.target.value)||b.qty});setEditId(null);}}}
+                      onBlur={e=>{editBox(b.id,{qty:parseInt(e.target.value)||b.qty});setEditId(null);}}
+                      type="number" min="1" inputMode="numeric"
+                      style={{width:72,padding:'6px 9px',borderRadius:5,background:C.s3,border:`1px solid ${C.amber}`,color:C.text,fontSize:16,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",outline:'none'}}/>
+                    <span style={{fontSize:10,color:C.muted}}>pcs</span>
+                  </>
+                ):(
+                  <>
+                    {b.pn&&<span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:800,color:C.amber,minWidth:56,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.pn}</span>}
+                    {b.coo&&<span style={{fontSize:10,color:C.sec,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:600}}>{b.coo}</span>}
+                    <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:17,fontWeight:900,color:C.text,marginLeft:'auto'}}>{b.qty}</span>
+                    <span style={{fontSize:9,color:C.muted}}>pcs</span>
+                    <button className="icon-btn edit" onClick={()=>setEditId(b.id)} aria-label="Edit quantity"><Svg name="edit" size={13} color={C.muted}/></button>
+                    <button className="icon-btn del"  onClick={()=>delBox(b.id)}    aria-label="Delete box"><Svg name="trash" size={13} color={C.muted}/></button>
+                  </>
+                )}
               </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-              {/* step chips */}
-              <div style={{display:'flex',gap:6,justifyContent:'center',marginBottom:18,flexWrap:'wrap'}}>
-                {steps.map((f,i)=>{
-                  const captured=draft[f.key]!==undefined; const active=i===stepIndex;
-                  return (<div key={f.key} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,minWidth:90,padding:'9px 12px',borderRadius:8,background:active?C.s3:C.surface,border:`1.5px solid ${active?C.orange:captured?C.green:C.border}`}}>
-                    <span style={{fontSize:8,fontWeight:700,letterSpacing:'0.08em',color:active?C.orange:captured?C.green:C.muted}}>{f.short}</span>
-                    <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:14,fontWeight:800,color:captured?C.text:C.muted}}>{captured?(draft[f.key]||'—'):(active?'…':'—')}</span>
-                  </div>);
-                })}
-              </div>
+      <div style={{padding:'14px 16px',borderTop:`1px solid ${C.border}`,flexShrink:0}}>
+        <div className="layout-toggle">
+          <button className={`lt-btn${cfg.layout==='list'?' active':''}`} onClick={()=>setCfg(c=>({...c,layout:'list'}))}>LISTA</button>
+          <button className={`lt-btn${cfg.layout==='bubble'?' active':''}`} onClick={()=>setCfg(c=>({...c,layout:'bubble'}))}>BURBUJAS</button>
+        </div>
+        <button className="tkt-btn" disabled={boxes.length===0} onClick={handlePrint}>
+          <Svg name="print" size={16} color={boxes.length?C.bg:C.muted}/>
+          GENERATE TICKET
+        </button>
+        <div style={{fontSize:10,color:C.muted,textAlign:'center',marginTop:6,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:'.05em'}}>
+          {prInfo.name} · {prInfo.width} thermal label · QR incluido
+        </div>
+      </div>
+    </div>
+  );
 
-              {/* input */}
-              <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:'0.07em',marginBottom:8,display:'flex',alignItems:'center',gap:6,justifyContent:'center'}}>
-                <span style={{display:'inline-block',width:7,height:7,borderRadius:'50%',background:C.green,animation:'pulse-dot 2s infinite'}}/>
-                {isQty?'TYPE OR SCAN':'SCAN'} {currentField.label}{currentField.optional?' (optional)':''}
-              </div>
-              <div style={{position:'relative'}}>
-                <input ref={inputRef} value={input} onChange={e=>setInput(isQty?e.target.value.replace(/\D/,''):e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleEnter()} type={isQty?'number':'text'} min={isQty?'1':undefined} placeholder={isQty?'Pieces in this box…':`Scan ${currentField.short} barcode…`} autoFocus style={{...inputSx,fontSize:21,fontWeight:800,padding:'14px 50px 14px 16px',height:58,border:`2px solid ${C.orange}`,borderRadius:10}}/>
-                <div style={{position:'absolute',right:15,top:'50%',transform:'translateY(-50%)'}}><Svg name="scan" size={21} color={C.orange}/></div>
-              </div>
-              <div style={{fontSize:11,color:C.muted,marginTop:7,textAlign:'center'}}>
-                Step {stepIndex+1} of {steps.length} · {steps.map(f=>f.short).join(' → ')} · Enter to confirm
-                {currentField.optional&&<button onClick={skipField} style={{marginLeft:10,background:'none',border:'none',color:C.blue,cursor:'pointer',fontSize:11,fontWeight:600,textDecoration:'underline'}}>skip {currentField.short}</button>}
-                {stepIndex>0&&<button onClick={resetDraft} style={{marginLeft:10,background:'none',border:'none',color:C.muted,cursor:'pointer',fontSize:11,textDecoration:'underline'}}>reset box</button>}
-              </div>
+  /* ════════════════════════════════
+     FLOOR PANELS
+  ════════════════════════════════ */
+  const floorScanPanel = (
+    <div className={`panel-scan${floorTab!=='scan'?' tab-hidden':''}`}>
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'20px',overflowY:'auto'}}>
+        <div style={{width:'100%',maxWidth:500}}>
+          <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:'.07em',marginBottom:8,display:'flex',alignItems:'center',gap:6,justifyContent:'center',fontFamily:"'Barlow Condensed',sans-serif"}}>
+            <span style={{width:7,height:7,borderRadius:'50%',background:C.blue,animation:'led-pulse-blue 2s infinite',flexShrink:0,display:'inline-block'}}/>
+            SCAN PALLET LABEL QR
+          </div>
+          <div className="scan-zone blue">
+            <div className="sz-bl"/><div className="sz-tr"/>
+            <input ref={floorInputRef} value={floorInput}
+              onChange={e=>{setFloorInput(e.target.value);setFloorErr('');}}
+              onKeyDown={e=>e.key==='Enter'&&handleFloorScan()}
+              type="text" placeholder="Scan QR from pallet label…"
+              className="main-inp blue" autoFocus/>
+            <div style={{position:'absolute',right:16,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}}>
+              <Svg name="scan" size={20} color={C.blue}/>
+            </div>
+          </div>
+          {floorErr&&<div className="scan-err" role="alert">{floorErr}</div>}
 
-              {/* live totals */}
-              <div style={{display:'flex',gap:10,justifyContent:'center',marginTop:26,flexWrap:'wrap'}}>
-                {[['BOXES',boxes.length,C.text],['TOTAL PCS',totalPcs,C.green],['AVG / BOX',avgPcs,C.sec]].map(([l,v,c])=>(
-                  <div key={l} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,padding:'12px 22px',textAlign:'center',minWidth:96}}>
-                    <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:26,fontWeight:900,color:c}}>{v}</div>
-                    <div style={{fontSize:9,color:C.muted,letterSpacing:'0.07em',marginTop:2}}>{l}</div>
-                  </div>
+          {/* History list */}
+          {history.length>0&&(
+            <div style={{marginTop:24}}>
+              <div style={{fontSize:9,fontWeight:700,color:C.muted,letterSpacing:'.08em',marginBottom:10,fontFamily:"'Barlow Condensed',sans-serif"}}>PALLETS RECIENTES ({history.length})</div>
+              <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                {history.map(p=>(
+                  <button key={p.id} className="hist-item" onClick={()=>loadFromHistory(p)}>
+                    <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:12,fontWeight:800,color:C.amber,minWidth:72,flexShrink:0}}>{p.id}</span>
+                    <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:p.meta.pn?C.text:C.muted,flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.meta.pn||'mixed'}</span>
+                    <span style={{fontSize:11,color:C.sec,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:600,flexShrink:0,marginRight:4}}>
+                      {p.boxes.length}b · {p.boxes.reduce((s,b)=>s+b.qty,0)}pcs
+                    </span>
+                    <Svg name="arrow" size={13} color={C.muted}/>
+                  </button>
                 ))}
               </div>
-              {(distinctPn.length>1||distinctCoo.length>1)&&(
-                <div style={{marginTop:14,textAlign:'center',fontSize:11,color:C.yellow}}>
-                  ⚠ Mixed pallet — {distinctPn.length>1?`${distinctPn.length} part numbers`:''}{distinctPn.length>1&&distinctCoo.length>1?' · ':''}{distinctCoo.length>1?`${distinctCoo.length} COOs`:''}
-                </div>
-              )}
             </div>
-          </div>
+          )}
         </div>
+      </div>
+    </div>
+  );
 
-        {/* RIGHT — box list + meta + ticket */}
-        <div style={{width:380,flexShrink:0,background:C.surface,borderLeft:`1px solid ${C.border}`,display:'flex',flexDirection:'column',overflow:'hidden'}}>
-          {/* pallet meta */}
+  const floorPalletPanel = (
+    <div className={`panel-list${floorTab!=='boxes'?' tab-hidden':''}`}>
+      {floorPallet ? (
+        <>
+          {/* Pallet header */}
           <div style={{padding:'14px 16px',borderBottom:`1px solid ${C.border}`,flexShrink:0}}>
-            <div style={{fontSize:9,fontWeight:700,color:C.muted,letterSpacing:'0.08em',marginBottom:10}}>PALLET / TICKET INFO <span style={{fontWeight:500,letterSpacing:0}}>(optional)</span></div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-              <div><label style={labelSx}>PART NUMBER</label><input value={meta.pn} onChange={e=>setMeta(m=>({...m,pn:e.target.value.toUpperCase()}))} placeholder={distinctPn.length===1?distinctPn[0]:'auto / mixed'} style={inputSx}/></div>
-              <div><label style={labelSx}>COO</label><input value={meta.coo} onChange={e=>setMeta(m=>({...m,coo:e.target.value.toUpperCase()}))} placeholder={distinctCoo.length===1?distinctCoo[0]:'auto / mixed'} style={inputSx}/></div>
-              <div><label style={labelSx}>PO (OPTIONAL)</label><input value={meta.po} onChange={e=>setMeta(m=>({...m,po:e.target.value.toUpperCase()}))} placeholder="VT9A0000…" style={inputSx}/></div>
-              <div><label style={labelSx}>REF / DELIVERY</label><input value={meta.ref} onChange={e=>setMeta(m=>({...m,ref:e.target.value.toUpperCase()}))} placeholder="optional" style={inputSx}/></div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+              <div>
+                <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                  <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:15,fontWeight:800,color:C.blue}}>{floorPallet.id}</span>
+                  {floorPallet.meta.pn&&<span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:13,fontWeight:700,color:C.text}}>{floorPallet.meta.pn}</span>}
+                  {floorPallet.meta.coo&&<span style={{fontSize:12,color:C.sec,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:600}}>{floorPallet.meta.coo}</span>}
+                </div>
+                {(floorPallet.meta.po||floorPallet.meta.ref)&&(
+                  <div style={{fontSize:10,color:C.muted,fontFamily:"'Barlow Condensed',sans-serif",marginTop:3}}>
+                    {floorPallet.meta.po&&`PO: ${floorPallet.meta.po}`}{floorPallet.meta.po&&floorPallet.meta.ref?' · ':''}{floorPallet.meta.ref&&`REF: ${floorPallet.meta.ref}`}
+                  </div>
+                )}
+              </div>
+              <button onClick={()=>{setFloorPallet(null);setFloorTab('scan');}}
+                style={{background:'none',border:'none',cursor:'pointer',color:C.muted,fontSize:11,fontFamily:"'Barlow Condensed',sans-serif",textDecoration:'underline',flexShrink:0}}>
+                scan new
+              </button>
             </div>
           </div>
 
-          {/* box list */}
+          {/* Box list with pick buttons */}
           <div style={{flex:1,overflowY:'auto',padding:'12px 16px'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
-              <div style={{fontSize:9,fontWeight:700,color:C.muted,letterSpacing:'0.08em'}}>BOXES ON PALLET</div>
-              <div style={{fontSize:11,color:C.sec}}>{boxes.length} box{boxes.length!==1?'es':''} · {totalPcs} pcs</div>
+              <div style={{fontSize:9,fontWeight:700,color:C.muted,letterSpacing:'.08em',fontFamily:"'Barlow Condensed',sans-serif"}}>CAJAS EN STORAGE — tap para retirar</div>
+              <div style={{fontSize:11,color:C.sec,fontFamily:"'Barlow Condensed',sans-serif"}}>{floorPallet.boxes.length}b · {floorPallet.boxes.reduce((s,b)=>s+b.qty,0)}pcs</div>
             </div>
-            {boxes.length===0?(
-              <div style={{textAlign:'center',padding:'40px 0',color:C.muted}}>
-                <Svg name="box" size={34} color={C.border}/>
-                <div style={{marginTop:12,fontSize:13}}>No boxes yet</div>
-                <div style={{fontSize:11,marginTop:4}}>Scan the first box to begin</div>
+
+            {floorPallet.boxes.length===0?(
+              <div style={{textAlign:'center',padding:'40px 0'}}>
+                <Svg name="check" size={32} color={C.green}/>
+                <div style={{marginTop:12,fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:'.06em',color:C.green,fontWeight:700}}>ALL BOXES PICKED</div>
+                <div style={{fontSize:11,marginTop:4,color:C.muted,fontFamily:"'Barlow Condensed',sans-serif"}}>Pallet vacío</div>
               </div>
             ):(
               <div style={{display:'flex',flexDirection:'column',gap:6}}>
-                {boxes.map((b,i)=>(
-                  <div key={b.id} style={{display:'flex',alignItems:'center',gap:9,padding:'9px 11px',background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,animation:'slide-in .15s ease'}}>
-                    <span style={{fontSize:11,color:C.muted,fontWeight:700,minWidth:42}}>Box {String(i+1).padStart(2,'0')}</span>
-                    {editingId===b.id?(
-                      <>
-                        <input defaultValue={b.qty} autoFocus onKeyDown={e=>{if(e.key==='Enter'){editBox(b.id,{qty:parseInt(e.target.value)||b.qty});setEditingId(null);}}} onBlur={e=>{editBox(b.id,{qty:parseInt(e.target.value)||b.qty});setEditingId(null);}} type="number" min="1" style={{...inputSx,width:70,fontSize:15,fontWeight:800,padding:'5px 8px'}}/>
-                        <span style={{fontSize:10,color:C.muted}}>pcs</span>
-                      </>
-                    ):(
-                      <>
-                        {b.pn&&<span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:800,color:C.orange,minWidth:60}}>{b.pn}</span>}
-                        {b.coo&&<span style={{fontSize:10,color:C.sec}}>{b.coo}</span>}
-                        <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:17,fontWeight:900,color:C.text,marginLeft:'auto'}}>{b.qty}</span>
-                        <span style={{fontSize:9,color:C.muted}}>pcs</span>
-                        <button onClick={()=>setEditingId(b.id)} title="Edit qty" style={{background:'none',border:'none',cursor:'pointer',padding:3,display:'flex'}}><Svg name="edit" size={12} color={C.muted}/></button>
-                        <button onClick={()=>delBox(b.id)} title="Delete" style={{background:'none',border:'none',cursor:'pointer',padding:3,display:'flex'}}><Svg name="trash" size={12} color={C.muted}/></button>
-                      </>
-                    )}
+                {floorPallet.boxes.map((b,i)=>(
+                  <div key={b.id} className="box-row">
+                    <span style={{fontSize:11,color:C.muted,fontWeight:700,minWidth:44,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:'.04em',flexShrink:0}}>
+                      Box {String(i+1).padStart(2,'0')}
+                    </span>
+                    {b.pn&&<span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:800,color:C.amber,minWidth:52,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.pn}</span>}
+                    {b.coo&&<span style={{fontSize:10,color:C.sec,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:600}}>{b.coo}</span>}
+                    <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:17,fontWeight:900,color:C.text,marginLeft:'auto'}}>{b.qty}</span>
+                    <span style={{fontSize:9,color:C.muted,marginRight:4}}>pcs</span>
+                    <button className="pick-btn" onClick={()=>pickBox(b.id)}>PICK</button>
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          {/* ticket button */}
+          {/* Reprint */}
           <div style={{padding:'14px 16px',borderTop:`1px solid ${C.border}`,flexShrink:0}}>
-            <button disabled={boxes.length===0} onClick={()=>printTicket({
-              pn: meta.pn || (distinctPn.length===1?distinctPn[0]:''),
-              coo: meta.coo || (distinctCoo.length===1?distinctCoo[0]:''),
-              po: meta.po, ref: meta.ref,
-            }, boxes)} style={{
-              width:'100%',padding:'12px 0',borderRadius:9,border:'none',
-              background:boxes.length?C.orange:C.s3,color:boxes.length?'#fff':C.muted,
-              cursor:boxes.length?'pointer':'not-allowed',fontSize:14,fontWeight:800,
-              display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-              <Svg name="print" size={16} color={boxes.length?'#fff':C.muted}/>Generate Ticket
+            <div className="layout-toggle">
+              <button className={`lt-btn${cfg.layout==='list'?' active':''}`} onClick={()=>setCfg(c=>({...c,layout:'list'}))}>LISTA</button>
+              <button className={`lt-btn${cfg.layout==='bubble'?' active':''}`} onClick={()=>setCfg(c=>({...c,layout:'bubble'}))}>BURBUJAS</button>
+            </div>
+            <button className="tkt-btn" disabled={floorPallet.boxes.length===0} onClick={floorReprint}>
+              <Svg name="print" size={16} color={floorPallet.boxes.length?C.bg:C.muted}/>
+              REPRINT UPDATED LABEL
             </button>
-            <div style={{fontSize:10,color:C.muted,textAlign:'center',marginTop:7}}>Zebra ZT · 12.8 cm wide thermal label with box breakdown</div>
+            <div style={{fontSize:10,color:C.muted,textAlign:'center',marginTop:6,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:'.05em'}}>
+              {prInfo.name} · {prInfo.width} · {floorPallet.boxes.reduce((s,b)=>s+b.qty,0)} pcs remaining
+            </div>
+          </div>
+        </>
+      ):(
+        <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:'40px',color:C.muted,textAlign:'center'}}>
+          <div>
+            <Svg name="history" size={32} color={C.border}/>
+            <div style={{marginTop:12,fontSize:13,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:'.05em'}}>No pallet cargado</div>
+            <div style={{fontSize:11,marginTop:4}}>Scan QR o selecciona del historial</div>
           </div>
         </div>
+      )}
+    </div>
+  );
+
+  /* ════════════════════════════════
+     ROOT RENDER
+  ════════════════════════════════ */
+  const isFloor  = mode==='floor';
+  const mobileTab     = isFloor ? floorTab  : rcvTab;
+  const setMobileTab  = isFloor ? setFloorTab : setRcvTab;
+  const tab2Label     = isFloor
+    ? `PALLET${floorPallet?` (${floorPallet.boxes.length})`:''}`
+    : `BOXES${boxes.length>0?` (${boxes.length})`:''}`;
+
+  return (
+    <div className="app-root">
+      {/* Header */}
+      <header style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 14px',height:50,background:C.surface,borderBottom:`1px solid ${C.border}`,flexShrink:0,gap:10}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,minWidth:0}}>
+          <div style={{width:28,height:28,borderRadius:5,background:isFloor?C.blue:C.amber,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,transition:'background .2s'}}>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill={C.bg} aria-hidden="true">
+              {isFloor
+                ? <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.5 3.5v4l3 1.5-.5 1L7.5 9V4.5h1z"/>
+                : <><polygon points="1,8 8,1 15,8 8,8"/><polygon points="8,8 15,8 8,15" opacity=".6"/></>
+              }
+            </svg>
+          </div>
+          <div style={{minWidth:0}}>
+            <div style={{fontSize:12,fontWeight:800,color:C.text,lineHeight:1.2,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:'.02em',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+              PackCalc <span style={{color:C.muted,fontWeight:600}}>— {isFloor?'Cycle Count / Floor':'Smart Receiving'}</span>
+            </div>
+            <div style={{fontSize:9,color:C.muted,letterSpacing:'.06em',fontFamily:"'Barlow Condensed',sans-serif"}}>ARROW ELECTRONICS · MICROSOFT · SEVENUM</div>
+          </div>
+        </div>
+        <div style={{display:'flex',gap:6,alignItems:'center',flexShrink:0}}>
+          <div className="seg-toggle">
+            <button className={`seg-btn${!isFloor?' active':''}`} onClick={()=>setMode('receive')}>RECEIVE</button>
+            <button className={`seg-btn${isFloor?' active blue-active':''}`} onClick={()=>{setMode('floor');setHistory(loadPallets());}}>FLOOR</button>
+          </div>
+          {!isFloor&&<button className="new-btn" onClick={clearAll}><Svg name="reset" size={12} color={C.sec}/>New</button>}
+        </div>
+      </header>
+
+      {/* Mobile tab bar */}
+      <div className="tab-bar">
+        <button className={`tab-btn${mobileTab==='scan'?' active'+(isFloor?' blue':''):''}`} onClick={()=>setMobileTab('scan')}>
+          {isFloor?'SCAN QR':'SCAN'}
+        </button>
+        <button className={`tab-btn${mobileTab!=='scan'?' active'+(isFloor?' blue':''):''}`} onClick={()=>setMobileTab(isFloor?'boxes':'boxes')}>
+          {tab2Label}
+        </button>
+      </div>
+
+      {/* Body */}
+      <div className="app-body">
+        {isFloor ? <>{floorScanPanel}{floorPalletPanel}</> : <>{scanPanel}{listPanel}</>}
       </div>
     </div>
   );
 };
+
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 </body>
