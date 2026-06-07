@@ -1035,7 +1035,6 @@ const App = () => {
                 className={`plt-tab${active?' active':''}`}
                 onClick={()=>switchPallet(i)}>
                 PLT {i+1}
-                {p.boxes.length>0&&<span className="plt-tab-badge">{p.boxes.length}</span>}
                 {pallets.length>1&&(
                   <button className="plt-tab-x" aria-label={`Remove PLT ${i+1}`}
                     onClick={e=>{e.stopPropagation();removePallet(i);}}>×</button>
