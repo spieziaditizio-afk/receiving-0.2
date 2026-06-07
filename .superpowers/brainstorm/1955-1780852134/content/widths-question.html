@@ -1,0 +1,128 @@
+<h2>¿Qué tan delgado debe quedar el panel de Packing List?</h2>
+<p class="subtitle">El sidebar izquierdo ya toma ~22%. El resto se reparte entre el scan (centro) y el packing list (derecha).</p>
+
+<style>
+  .wf {
+    background: #111;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #333;
+    font-family: 'Chakra Petch', monospace, sans-serif;
+    height: 160px;
+    display: flex;
+    flex-direction: column;
+    margin-top: 10px;
+  }
+  .wf-body { flex: 1; display: flex; }
+  .wf-col {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #2a2a2a;
+    overflow: hidden;
+    position: relative;
+  }
+  .wf-col:last-child { border-right: none; }
+  .wf-label {
+    position: absolute;
+    bottom: 6px;
+    left: 0; right: 0;
+    text-align: center;
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: .06em;
+  }
+  .wf-pct {
+    position: absolute;
+    top: 6px;
+    left: 0; right: 0;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 900;
+    color: #fbb700;
+    line-height: 1;
+  }
+  .wf-bar {
+    position: absolute;
+    bottom: 0;
+    left: 4px; right: 4px;
+    height: 3px;
+    border-radius: 2px;
+    opacity: .5;
+  }
+</style>
+
+<div class="options">
+
+  <div class="option" data-choice="narrow" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <div class="wf">
+        <div class="wf-body">
+          <div class="wf-col" style="width:22%;background:rgba(251,183,0,.06)">
+            <span class="wf-pct">22%</span>
+            <span class="wf-label" style="color:#fbb700">SIDEBAR</span>
+          </div>
+          <div class="wf-col" style="flex:1;background:rgba(0,229,105,.04)">
+            <span class="wf-pct" style="color:#00e569">52%</span>
+            <span class="wf-label" style="color:#00e569">SCAN</span>
+          </div>
+          <div class="wf-col" style="width:26%;background:rgba(120,120,120,.05)">
+            <span class="wf-pct" style="color:#888">26%</span>
+            <span class="wf-label" style="color:#888">PACKING LIST</span>
+          </div>
+        </div>
+      </div>
+      <h3>Estrecho — 26%</h3>
+      <p>Máximo espacio para el scan. El packing list queda compacto, los campos PO/PN/DEL/COO/QTY aún caben bien.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="medium" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <div class="wf">
+        <div class="wf-body">
+          <div class="wf-col" style="width:22%;background:rgba(251,183,0,.06)">
+            <span class="wf-pct">22%</span>
+            <span class="wf-label" style="color:#fbb700">SIDEBAR</span>
+          </div>
+          <div class="wf-col" style="flex:1;background:rgba(0,229,105,.04)">
+            <span class="wf-pct" style="color:#00e569">46%</span>
+            <span class="wf-label" style="color:#00e569">SCAN</span>
+          </div>
+          <div class="wf-col" style="width:32%;background:rgba(120,120,120,.05)">
+            <span class="wf-pct" style="color:#888">32%</span>
+            <span class="wf-label" style="color:#888">PACKING LIST</span>
+          </div>
+        </div>
+      </div>
+      <h3>Medio — 32%</h3>
+      <p>Equilibrado. El packing list tiene aire para los campos de tags (DEL, COO) y el estado de verificación.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="keep" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <div class="wf">
+        <div class="wf-body">
+          <div class="wf-col" style="width:22%;background:rgba(251,183,0,.06)">
+            <span class="wf-pct">22%</span>
+            <span class="wf-label" style="color:#fbb700">SIDEBAR</span>
+          </div>
+          <div class="wf-col" style="flex:1;background:rgba(0,229,105,.04)">
+            <span class="wf-pct" style="color:#00e569">40%</span>
+            <span class="wf-label" style="color:#00e569">SCAN</span>
+          </div>
+          <div class="wf-col" style="width:38%;background:rgba(120,120,120,.05)">
+            <span class="wf-pct" style="color:#888">38%</span>
+            <span class="wf-label" style="color:#888">PACKING LIST</span>
+          </div>
+        </div>
+      </div>
+      <h3>Igual al actual — 38%</h3>
+      <p>Solo se agrega el sidebar izquierdo. El packing list mantiene el mismo ancho de ahora (se reduce el área de scan).</p>
+    </div>
+  </div>
+
+</div>

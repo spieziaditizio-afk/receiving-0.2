@@ -1,0 +1,303 @@
+<h2>¿Qué estructura de layout prefieres?</h2>
+<p class="subtitle">Mueve los stats y el PALLET BREAKDOWN a la izquierda, y reduce el panel derecho</p>
+
+<style>
+  .mockup-frame {
+    background: #111;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #333;
+    font-family: 'Chakra Petch', monospace, sans-serif;
+    height: 220px;
+    display: flex;
+    flex-direction: column;
+    margin-top: 10px;
+  }
+  .mf-header {
+    height: 22px;
+    background: #1a1a1a;
+    border-bottom: 1px solid #333;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    gap: 5px;
+    flex-shrink: 0;
+  }
+  .mf-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .mf-logo { font-size: 8px; color: #fbb700; font-weight: 800; margin-left: 4px; letter-spacing: .05em; }
+  .mf-body { flex: 1; display: flex; overflow: hidden; }
+  .mf-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid #2a2a2a;
+  }
+  .mf-panel:last-child { border-right: none; }
+  .mf-panel-header {
+    padding: 4px 6px;
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    border-bottom: 1px solid #2a2a2a;
+    flex-shrink: 0;
+  }
+  .mf-panel-body { flex: 1; padding: 5px 6px; overflow: hidden; }
+  .mf-stat-row { display: flex; flex-direction: column; align-items: center; padding: 4px 0; border-bottom: 1px solid #222; }
+  .mf-stat-val { font-size: 14px; font-weight: 900; line-height: 1; }
+  .mf-stat-lbl { font-size: 6px; color: #666; letter-spacing: .1em; margin-top: 1px; }
+  .mf-plt-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 3px 4px;
+    border-radius: 4px;
+    border: 1px solid #2a2a2a;
+    margin-bottom: 3px;
+    background: #1a1a1a;
+  }
+  .mf-plt-name { font-size: 7px; font-weight: 800; color: #fbb700; }
+  .mf-plt-info { font-size: 6px; color: #555; }
+  .mf-pill { font-size: 6px; color: #00e569; font-weight: 700; }
+  .mf-scan-area {
+    border: 1.5px dashed #2a2a2a;
+    border-radius: 5px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 7px;
+    color: #444;
+    margin-bottom: 5px;
+    letter-spacing: .05em;
+  }
+  .mf-box-grid { display: flex; flex-wrap: wrap; gap: 2px; }
+  .mf-box { width: 16px; height: 16px; border-radius: 3px; background: #1e2e1e; border: 1px solid #00e569; display: flex; align-items: center; justify-content: center; font-size: 5px; color: #00e569; font-weight: 800; }
+  .mf-field { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 3px; padding: 3px 5px; margin-bottom: 3px; font-size: 6px; color: #555; }
+  .mf-section-lbl { font-size: 6px; font-weight: 700; color: #555; letter-spacing: .1em; margin-bottom: 3px; border-bottom: 1px solid #222; padding-bottom: 2px; }
+  .mf-badge {
+    font-size: 7px; font-weight: 800; padding: 2px 5px;
+    border-radius: 3px; background: rgba(0,229,105,.15);
+    color: #00e569; border: 1px solid rgba(0,229,105,.3);
+    display: inline-block; margin-bottom: 4px;
+  }
+  .mf-tabs { display: flex; height: 18px; border-bottom: 1px solid #2a2a2a; background: #161616; flex-shrink: 0; }
+  .mf-tab { padding: 0 8px; font-size: 6px; font-weight: 800; color: #fbb700; border-bottom: 1.5px solid #fbb700; display: flex; align-items: center; letter-spacing: .05em; }
+  .mf-tab-inactive { padding: 0 8px; font-size: 6px; color: #444; display: flex; align-items: center; }
+  .mf-btn { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 3px; padding: 2px 6px; font-size: 6px; color: #888; font-weight: 700; letter-spacing: .05em; text-align: center; }
+  .mf-print-btn { background: #1e1e1e; border: 1px solid #333; border-radius: 4px; padding: 4px 0; font-size: 6px; color: #aaa; font-weight: 700; letter-spacing: .05em; text-align: center; margin-top: 4px; }
+  .mf-status { background: rgba(247,192,72,.08); border: 1px solid rgba(247,192,72,.3); border-radius: 4px; padding: 3px 5px; font-size: 6px; color: #f7c048; font-weight: 700; letter-spacing: .05em; margin-bottom: 4px; }
+  .percent-lbl { font-size: 6px; color: #444; }
+</style>
+
+<div class="cards">
+
+  <!-- OPTION A: 3 columnas -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup-frame">
+        <div class="mf-header">
+          <div class="mf-dot" style="background:#ff5f57"></div>
+          <div class="mf-dot" style="background:#febc2e"></div>
+          <div class="mf-dot" style="background:#28c840"></div>
+          <div class="mf-logo">PACKCALC</div>
+        </div>
+        <div class="mf-body">
+          <!-- Sidebar izquierdo -->
+          <div class="mf-panel" style="width:22%">
+            <div class="mf-panel-header" style="color:#fbb700">RESUMEN</div>
+            <div class="mf-panel-body">
+              <div style="display:flex;gap:4px;margin-bottom:6px">
+                <div class="mf-stat-row" style="flex:1">
+                  <span class="mf-stat-val" style="color:#e0e0e0">1</span>
+                  <span class="mf-stat-lbl">PALLETS</span>
+                </div>
+                <div class="mf-stat-row" style="flex:1">
+                  <span class="mf-stat-val" style="color:#fbb700">0</span>
+                  <span class="mf-stat-lbl">BOXES</span>
+                </div>
+                <div class="mf-stat-row" style="flex:1">
+                  <span class="mf-stat-val" style="color:#00e569">0</span>
+                  <span class="mf-stat-lbl">PCS</span>
+                </div>
+              </div>
+              <div class="mf-section-lbl">PALLET BREAKDOWN</div>
+              <div class="mf-plt-row">
+                <span class="mf-plt-name">PLT 1</span>
+                <span class="mf-plt-info">0 boxes</span>
+                <span class="mf-pill">0 pcs</span>
+                <div class="mf-btn" style="padding:1px 4px;font-size:5px">TICKET</div>
+              </div>
+              <div class="mf-print-btn">⊞ PRINT SUMMARY</div>
+            </div>
+          </div>
+          <!-- Panel central: SCAN -->
+          <div class="mf-panel" style="flex:1">
+            <div class="mf-tabs">
+              <div class="mf-tab">PLT 1</div>
+              <div class="mf-tab-inactive">+ PALLET</div>
+            </div>
+            <div class="mf-panel-body">
+              <div class="mf-scan-area">SCAN BOX HERE</div>
+              <div class="mf-box-grid">
+                <div class="mf-box">01</div>
+                <div class="mf-box">02</div>
+                <div class="mf-box">03</div>
+              </div>
+            </div>
+          </div>
+          <!-- Panel derecho: Packing list (más delgado) -->
+          <div class="mf-panel" style="width:28%">
+            <div class="mf-panel-header" style="color:#888">PACKING LIST</div>
+            <div class="mf-panel-body">
+              <div class="mf-field">PO ___________</div>
+              <div class="mf-field">PN ___________</div>
+              <div class="mf-field">DEL __________</div>
+              <div class="mf-field">QTY __________</div>
+              <div class="mf-status">⚠ INCOMPLETE</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — 3 Columnas</h3>
+      <p>Sidebar izquierdo (~22%) con stats + breakdown. Centro scan (~50%). Packing list a la derecha (~28%). El panel derecho se reduce significativamente.</p>
+    </div>
+  </div>
+
+  <!-- OPTION B: Sidebar estrecho + 2 columnas -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup-frame">
+        <div class="mf-header">
+          <div class="mf-dot" style="background:#ff5f57"></div>
+          <div class="mf-dot" style="background:#febc2e"></div>
+          <div class="mf-dot" style="background:#28c840"></div>
+          <div class="mf-logo">PACKCALC</div>
+        </div>
+        <div class="mf-body">
+          <!-- Sidebar izquierdo muy estrecho (solo iconos/números) -->
+          <div class="mf-panel" style="width:16%">
+            <div class="mf-panel-header" style="color:#fbb700;font-size:6px">STATS</div>
+            <div class="mf-panel-body" style="padding:4px 3px">
+              <div class="mf-stat-row" style="margin-bottom:5px">
+                <span class="mf-stat-val" style="color:#e0e0e0;font-size:18px">1</span>
+                <span class="mf-stat-lbl">PALLETS</span>
+              </div>
+              <div class="mf-stat-row" style="margin-bottom:5px">
+                <span class="mf-stat-val" style="color:#fbb700;font-size:18px">0</span>
+                <span class="mf-stat-lbl">BOXES</span>
+              </div>
+              <div class="mf-stat-row" style="margin-bottom:8px">
+                <span class="mf-stat-val" style="color:#00e569;font-size:18px">0</span>
+                <span class="mf-stat-lbl">PCS</span>
+              </div>
+              <div style="border-top:1px solid #222;padding-top:4px">
+                <div class="mf-section-lbl" style="text-align:center">BREAKDOWN</div>
+                <div style="text-align:center;font-size:7px;color:#fbb700;font-weight:800;margin-bottom:2px">PLT 1</div>
+                <div style="text-align:center;font-size:6px;color:#555">0 pcs</div>
+              </div>
+            </div>
+          </div>
+          <!-- Panel central: SCAN + pallet breakdown abajo -->
+          <div class="mf-panel" style="flex:1">
+            <div class="mf-tabs">
+              <div class="mf-tab">PLT 1</div>
+              <div class="mf-tab-inactive">+ PALLET</div>
+            </div>
+            <div class="mf-panel-body">
+              <div class="mf-scan-area">SCAN BOX HERE</div>
+              <div class="mf-box-grid">
+                <div class="mf-box">01</div>
+                <div class="mf-box">02</div>
+              </div>
+            </div>
+          </div>
+          <!-- Panel derecho: Packing list -->
+          <div class="mf-panel" style="width:32%">
+            <div class="mf-panel-header" style="color:#888">DELIVERY</div>
+            <div class="mf-panel-body">
+              <div class="mf-field">PO ___________</div>
+              <div class="mf-field">PN ___________</div>
+              <div class="mf-field">DEL __________</div>
+              <div class="mf-field">QTY __________</div>
+              <div class="mf-status">⚠ INCOMPLETE</div>
+              <div class="mf-print-btn">⊞ PRINT SUMMARY</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Sidebar vertical compacto</h3>
+      <p>Sidebar muy estrecho (~16%) con stats grandes apilados verticalmente + breakdown compacto. Centro scan. Packing list + Print a la derecha (~32%).</p>
+    </div>
+  </div>
+
+  <!-- OPTION C: Solo 2 paneles, breakdown integrado -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup-frame">
+        <div class="mf-header">
+          <div class="mf-dot" style="background:#ff5f57"></div>
+          <div class="mf-dot" style="background:#febc2e"></div>
+          <div class="mf-dot" style="background:#28c840"></div>
+          <div class="mf-logo">PACKCALC</div>
+        </div>
+        <div class="mf-body">
+          <!-- Panel izquierdo con stats arriba + scan abajo -->
+          <div class="mf-panel" style="flex:1">
+            <!-- Barra de stats en la parte superior del panel izquierdo -->
+            <div style="display:flex;border-bottom:1px solid #2a2a2a;flex-shrink:0;height:28px">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:1px solid #2a2a2a">
+                <span style="font-size:11px;font-weight:900;color:#e0e0e0;line-height:1">1</span>
+                <span style="font-size:5px;color:#555;letter-spacing:.1em">PALLETS</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:1px solid #2a2a2a">
+                <span style="font-size:11px;font-weight:900;color:#fbb700;line-height:1">0</span>
+                <span style="font-size:5px;color:#555;letter-spacing:.1em">BOXES</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center">
+                <span style="font-size:11px;font-weight:900;color:#00e569;line-height:1">0</span>
+                <span style="font-size:5px;color:#555;letter-spacing:.1em">PCS</span>
+              </div>
+            </div>
+            <div class="mf-tabs">
+              <div class="mf-tab">PLT 1</div>
+              <div class="mf-tab-inactive">+ PALLET</div>
+            </div>
+            <div class="mf-panel-body">
+              <div class="mf-scan-area">SCAN BOX HERE</div>
+              <div class="mf-box-grid">
+                <div class="mf-box">01</div>
+                <div class="mf-box">02</div>
+                <div class="mf-box">03</div>
+              </div>
+            </div>
+          </div>
+          <!-- Panel derecho reducido: Packing list + breakdown -->
+          <div class="mf-panel" style="width:30%">
+            <div class="mf-panel-header" style="color:#888">PACKING LIST + BREAKDOWN</div>
+            <div class="mf-panel-body">
+              <div class="mf-field">PO ___________</div>
+              <div class="mf-field">QTY __________</div>
+              <div class="mf-status">⚠ INCOMPLETE</div>
+              <div class="mf-section-lbl">PALLET BREAKDOWN</div>
+              <div class="mf-plt-row">
+                <span class="mf-plt-name">PLT 1</span>
+                <span class="mf-pill">0 pcs</span>
+                <div class="mf-btn" style="padding:1px 4px;font-size:5px">TICKET</div>
+              </div>
+              <div class="mf-print-btn">⊞ PRINT</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Stats integrados en barra superior</h3>
+      <p>Sin sidebar nuevo — los stats van en una barra horizontal encima del área de scan. Panel derecho reducido a ~30% con packing list + breakdown juntos.</p>
+    </div>
+  </div>
+
+</div>
